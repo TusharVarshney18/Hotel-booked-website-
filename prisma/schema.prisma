@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Hotel {
+  id              String         @id @default(cuid())
+  slug            String         @unique
+  name            String
+  tagline         String
+  location        String
+  city            String
+  country         String
+  region          String
+  description     String
+  longDescription String
+  rating          Float
+  reviewCount     Int
+  priceFrom       Int
+  images          Json
+  amenities       Json
+  experiences     Json
+  collection      String
+  featured        Boolean        @default(false)
+  rooms           Room[]
+  extras          Extra[]
+  reviews         Review[]
+  reservations    Reservation[]
+}
+
+model Room {
+  id           String        @id @default(cuid())
+  hotelId      String
+  hotel        Hotel         @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  key          String
+  name         String
+  description  String
+  size         String
+  occupancy    Int
+  beds         String
+  price        Int
+  inventory    Int           @default(1)
+  images       Json
+  amenities    Json
+  reservations Reservation[]
+
+  @@unique([hotelId, key])
+}
+
+model Extra {
+  id          String @id @default(cuid())
+  hotelId     String
+  hotel       Hotel  @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  key         String
+  name        String
+  description String
+  price       Int
+
+  @@unique([hotelId, key])
+}
+
+model Review {
+  id      String @id @default(cuid())
+  hotelId String
+  hotel   Hotel  @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  name    String
+  origin  String
+  rating  Int
+  title   String
+  body    String
+  date    String
+}
+
+model Reservation {
+  id                 String             @id
+  hotelId            String
+  hotel              Hotel              @relation(fields: [hotelId], references: [id])
+  roomId             String
+  room               Room               @relation(fields: [roomId], references: [id])
+  checkIn            String
+  checkOut           String
+  adults             Int
+  children           Int
+  title              String
+  firstName          String
+  lastName           String
+  email              String
+  phone              String
+  country            String
+  specialRequests    String             @default("")
+  paymentMethod      String
+  paymentLast4       String?
+  paymentUpi         String?
+  paymentBrand       String?
+  paymentStatus      String
+  nights             Int
+  roomTotal          Int
+  extrasTotal        Int
+  taxes              Int
+  total              Int
+  status             String
+  createdAt          DateTime           @default(now())
+  cancelledAt        DateTime?
+  refundAmount       Int?
+  cancellationReason String?
+  extras             ReservationExtra[]
+
+  @@index([email])
+  @@index([status, checkIn, checkOut])
+}
+
+model ReservationExtra {
+  id            String      @id @default(cuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  extraKey      String
+  name          String
+  price         Int
+}
+
+model Experience {
+  slug        String @id
+  title       String
+  kicker      String
+  description String
+  image       String
+  sortOrder   Int    @default(0)
+}
+
+model Testimonial {
+  id     String @id @default(cuid())
+  quote  String
+  name   String
+  detail String
+  sortOrder Int @default(0)
+}
+
+model ConciergeMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  folio     String?
+  letter    String
+  createdAt DateTime @default(now())
+}
+
+model CircleEnquiry {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  tier      String
+  createdAt DateTime @default(now())
+}
