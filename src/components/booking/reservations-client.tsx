@@ -3,11 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 import { useBookings } from "@/components/booking/booking-provider";
 import { Container, Eyebrow } from "@/components/site/container";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { formatDate, formatINR } from "@/lib/format";
 import type { ReservationStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -20,12 +17,8 @@ const filters: Array<{ id: "all" | ReservationStatus; label: string }> = [
 ];
 
 export function ReservationsClient() {
-  const { reservations, ready, session, requestSignIn, signOut } = useBookings();
+  const { reservations, ready, session, signOut } = useBookings();
   const [filter, setFilter] = useState<"all" | ReservationStatus>("all");
-  const [email, setEmail] = useState("");
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const list = useMemo(
     () =>
@@ -34,23 +27,6 @@ export function ReservationsClient() {
         : reservations.filter((item) => item.status === filter),
     [filter, reservations]
   );
-
-  async function sendLink(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!email) return;
-    setSending(true);
-    try {
-      const result = await requestSignIn(email);
-      setSent(true);
-      setPreviewUrl(result.previewUrl ?? null);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "The link could not be sent."
-      );
-    } finally {
-      setSending(false);
-    }
-  }
 
   return (
     <div className="pt-24 pb-20">
@@ -76,45 +52,16 @@ export function ReservationsClient() {
             </button>
           </div>
         ) : (
-          <div className="mt-8 border border-border bg-card p-6">
-            {sent ? (
-              <div>
-                <p className="text-sm">
-                  If a folio exists for {email}, a sign-in link is on its way.
-                  The link expires in 15 minutes.
-                </p>
-                {previewUrl ? (
-                  <a
-                    href={previewUrl}
-                    className="mt-3 inline-block break-all text-xs text-gold underline"
-                  >
-                    Development link: {previewUrl}
-                  </a>
-                ) : null}
-              </div>
-            ) : (
-              <form
-                className="flex flex-col gap-3 sm:flex-row"
-                onSubmit={sendLink}
-              >
-                <Input
-                  name="email"
-                  type="email"
-                  required
-                  placeholder="Email on the folio"
-                  className="h-12 flex-1 rounded-none"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                />
-                <Button
-                  type="submit"
-                  disabled={sending}
-                  className="h-12 rounded-none bg-espresso px-6 text-[11px] uppercase tracking-[0.2em] text-ivory"
-                >
-                  {sending ? "Sending" : "Email me a link"}
-                </Button>
-              </form>
-            )}
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border border-border bg-card p-6">
+            <p className="text-sm text-muted-foreground">
+              Sign in to see folios held under your email.
+            </p>
+            <Link
+              href="/login"
+              className="inline-flex h-11 items-center bg-gold px-6 text-[11px] uppercase tracking-[0.22em] text-espresso"
+            >
+              Sign in
+            </Link>
           </div>
         )}
 

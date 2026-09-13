@@ -26,7 +26,7 @@ export function SiteHeader() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const { reservations } = useBookings();
+  const { reservations, session } = useBookings();
   const upcoming = reservations.filter((item) => item.status === "confirmed")
     .length;
 
@@ -77,10 +77,10 @@ export function SiteHeader() {
             Open for stays
           </span>
           <Link
-            href="/reservations"
+            href={session ? "/reservations" : "/login"}
             className="text-[12px] text-white/65 hover:text-white"
           >
-            Folio{upcoming ? ` · ${upcoming}` : ""}
+            {session ? `Folio${upcoming ? ` · ${upcoming}` : ""}` : "Sign in"}
           </Link>
           <Link
             href="/collection"
@@ -124,11 +124,11 @@ export function SiteHeader() {
                 </Link>
               ))}
               <Link
-                href="/reservations"
+                href={session ? "/reservations" : "/login"}
                 onClick={() => setOpen(false)}
                 className="text-white/60"
               >
-                Folio
+                {session ? "Folio" : "Sign in"}
               </Link>
               <Link
                 href="/concierge"
