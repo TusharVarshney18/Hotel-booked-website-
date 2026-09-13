@@ -1,20 +1,21 @@
 import type { Metadata } from "next";
-import { Outfit, Syne } from "next/font/google";
+import { Jost, Playfair_Display } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { SiteHeader } from "@/components/site/header";
 import { SiteFooter } from "@/components/site/footer";
 import "./globals.css";
 
-const syne = Syne({
+const playfair = Playfair_Display({
   subsets: ["latin"],
-  variable: "--font-syne",
-  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-playfair",
+  weight: ["400", "500", "600", "700", "800", "900"],
   display: "swap",
 });
 
-const outfit = Outfit({
+const jost = Jost({
   subsets: ["latin"],
-  variable: "--font-outfit",
+  variable: "--font-jost",
+  weight: ["300", "400", "500", "600"],
   display: "swap",
 });
 
@@ -34,7 +35,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${syne.variable} ${outfit.variable} dark h-full`}
+      className={`${playfair.variable} ${jost.variable} dark h-full`}
       data-scroll-behavior="smooth"
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
