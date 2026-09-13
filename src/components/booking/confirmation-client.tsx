@@ -117,6 +117,14 @@ export function ConfirmationClient({ id }: { id: string }) {
               </div>
               <div>
                 <dt className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+                  Settlement
+                </dt>
+                <dd className="mt-1 capitalize">
+                  {reservation.payment.status.replace("_", " ")}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
                   Status
                 </dt>
                 <dd className="mt-1 capitalize">{reservation.status}</dd>

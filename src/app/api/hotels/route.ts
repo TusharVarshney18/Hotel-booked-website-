@@ -1,22 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listHotels } from "@/lib/queries";
+import { firstIssue, hotelsQuerySchema } from "@/lib/schemas";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = request.nextUrl;
+  const params = request.nextUrl.searchParams;
+  const parsed = hotelsQuerySchema.safeParse({
+    destination: params.get("destination"),
+    collection: params.get("collection"),
+    maxPrice: params.get("maxPrice"),
+    checkIn: params.get("checkIn"),
+    checkOut: params.get("checkOut"),
+    adults: params.get("adults"),
+    children: params.get("children"),
+  });
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: firstIssue(parsed.error) },
+      { status: 400 }
+    );
+  }
+
+  const { adults, children, ...filters } = parsed.data;
   const hotels = await listHotels({
-    destination: searchParams.get("destination") ?? undefined,
-    collection: searchParams.get("collection") ?? undefined,
-    maxPrice: searchParams.get("maxPrice")
-      ? Number(searchParams.get("maxPrice"))
-      : undefined,
-    checkIn: searchParams.get("checkIn") ?? undefined,
-    checkOut: searchParams.get("checkOut") ?? undefined,
-    guests: searchParams.get("adults")
-      ? Number(searchParams.get("adults")) +
-        Number(searchParams.get("children") ?? 0)
-      : undefined,
+    ...filters,
+    guests: adults ? adults + (children ?? 0) : undefined,
   });
   return NextResponse.json({ hotels });
 }

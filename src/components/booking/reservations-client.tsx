@@ -3,8 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useBookings } from "@/components/booking/booking-provider";
 import { Container, Eyebrow } from "@/components/site/container";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { formatDate, formatINR } from "@/lib/format";
 import type { ReservationStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -17,8 +20,13 @@ const filters: Array<{ id: "all" | ReservationStatus; label: string }> = [
 ];
 
 export function ReservationsClient() {
-  const { reservations, ready, refreshReservations } = useBookings();
+  const { reservations, ready, session, requestSignIn, signOut } = useBookings();
   const [filter, setFilter] = useState<"all" | ReservationStatus>("all");
+  const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
   const list = useMemo(
     () =>
       filter === "all"
@@ -27,44 +35,89 @@ export function ReservationsClient() {
     [filter, reservations]
   );
 
+  async function sendLink(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!email) return;
+    setSending(true);
+    try {
+      const result = await requestSignIn(email);
+      setSent(true);
+      setPreviewUrl(result.previewUrl ?? null);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "The link could not be sent."
+      );
+    } finally {
+      setSending(false);
+    }
+  }
+
   return (
     <div className="pt-24 pb-20">
       <Container>
         <Eyebrow>The ledger</Eyebrow>
         <h1 className="mt-3 font-display text-5xl">Reservations</h1>
         <p className="mt-3 max-w-xl text-muted-foreground">
-          Stays held in the house ledger. Look up a folio by number or the email
-          on the reservation. A sample stay is AUR-184720.
+          Stays held in the house ledger. Sign in with the email on your folio
+          to gather every reservation, on any device.
         </p>
-        <form
-          className="mt-8 flex flex-col gap-3 sm:flex-row"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const form = new FormData(event.currentTarget);
-            refreshReservations({
-              folio: String(form.get("folio") || ""),
-              email: String(form.get("email") || ""),
-            }).catch(() => null);
-          }}
-        >
-          <input
-            name="folio"
-            placeholder="AUR-000000"
-            className="h-12 flex-1 border border-input bg-card px-3 text-sm"
-          />
-          <input
-            name="email"
-            type="email"
-            placeholder="Email on the folio"
-            className="h-12 flex-1 border border-input bg-card px-3 text-sm"
-          />
-          <button
-            type="submit"
-            className="h-12 bg-espresso px-6 text-[11px] uppercase tracking-[0.2em] text-ivory"
-          >
-            Find
-          </button>
-        </form>
+
+        {session ? (
+          <div className="mt-8 flex flex-wrap items-center gap-4 border border-border bg-card p-5">
+            <p className="text-sm">
+              Signed in as <span className="text-gold">{session.email}</span>
+            </p>
+            <button
+              type="button"
+              onClick={() => signOut().catch(() => null)}
+              className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground underline"
+            >
+              Sign out
+            </button>
+          </div>
+        ) : (
+          <div className="mt-8 border border-border bg-card p-6">
+            {sent ? (
+              <div>
+                <p className="text-sm">
+                  If a folio exists for {email}, a sign-in link is on its way.
+                  The link expires in 15 minutes.
+                </p>
+                {previewUrl ? (
+                  <a
+                    href={previewUrl}
+                    className="mt-3 inline-block break-all text-xs text-gold underline"
+                  >
+                    Development link: {previewUrl}
+                  </a>
+                ) : null}
+              </div>
+            ) : (
+              <form
+                className="flex flex-col gap-3 sm:flex-row"
+                onSubmit={sendLink}
+              >
+                <Input
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="Email on the folio"
+                  className="h-12 flex-1 rounded-none"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                />
+                <Button
+                  type="submit"
+                  disabled={sending}
+                  className="h-12 rounded-none bg-espresso px-6 text-[11px] uppercase tracking-[0.2em] text-ivory"
+                >
+                  {sending ? "Sending" : "Email me a link"}
+                </Button>
+              </form>
+            )}
+          </div>
+        )}
+
         <div className="mt-8 flex flex-wrap gap-2">
           {filters.map((item) => (
             <button

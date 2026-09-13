@@ -28,7 +28,7 @@ export function CollectionExplorer({
   checkIn,
   checkOut,
   adults,
-  children,
+  childrenCount,
 }: {
   initialHotels: Hotel[];
   destinations: Destination[];
@@ -36,7 +36,7 @@ export function CollectionExplorer({
   checkIn?: string;
   checkOut?: string;
   adults?: string;
-  children?: string;
+  childrenCount?: string;
 }) {
   const [kind, setKind] = useState<CollectionKind | "All">("All");
   const [maxPrice, setMaxPrice] = useState(1000000);
@@ -52,8 +52,9 @@ export function CollectionExplorer({
     if (checkIn) params.set("checkIn", checkIn);
     if (checkOut) params.set("checkOut", checkOut);
     if (adults) params.set("adults", adults);
-    if (children) params.set("children", children);
+    if (childrenCount) params.set("children", childrenCount);
     const controller = new AbortController();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     api<{ hotels: Hotel[] }>(`/api/hotels?${params.toString()}`, {
       signal: controller.signal,
@@ -62,7 +63,7 @@ export function CollectionExplorer({
       .catch(() => null)
       .finally(() => setLoading(false));
     return () => controller.abort();
-  }, [adults, checkIn, checkOut, children, destination, kind, maxPrice]);
+  }, [adults, checkIn, checkOut, childrenCount, destination, kind, maxPrice]);
 
   return (
     <>
@@ -74,7 +75,7 @@ export function CollectionExplorer({
           defaultCheckIn={checkIn}
           defaultCheckOut={checkOut}
           defaultAdults={adults ? Number(adults) : 2}
-          defaultChildren={children ? Number(children) : 0}
+          defaultChildren={childrenCount ? Number(childrenCount) : 0}
         />
         <div className="mt-8 flex flex-col gap-6 rounded-3xl border border-white/10 bg-card p-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-2">

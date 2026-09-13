@@ -1,23 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { circleSchema, firstIssue } from "@/lib/schemas";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  const body = (await request.json()) as {
-    name?: string;
-    email?: string;
-    tier?: string;
-  };
-  if (!body.name || !body.email || !body.tier) {
-    return NextResponse.json({ error: "Please complete the enquiry." }, { status: 400 });
+  const limited = await checkRateLimit(request, "circle", 5, 60);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again shortly." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfter) } }
+    );
   }
-  const enquiry = await prisma.circleEnquiry.create({
-    data: {
-      name: body.name,
-      email: body.email,
-      tier: body.tier,
-    },
-  });
+
+  const parsed = circleSchema.safeParse(await request.json().catch(() => ({})));
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: firstIssue(parsed.error) },
+      { status: 400 }
+    );
+  }
+  const enquiry = await prisma.circleEnquiry.create({ data: parsed.data });
   return NextResponse.json({ id: enquiry.id });
 }

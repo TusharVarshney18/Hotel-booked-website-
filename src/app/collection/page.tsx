@@ -54,7 +54,7 @@ export default async function CollectionPage({
         checkIn={params.checkIn}
         checkOut={params.checkOut}
         adults={params.adults}
-        children={params.children}
+        childrenCount={params.children}
       />
     </div>
   );

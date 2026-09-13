@@ -7,7 +7,6 @@ export function PriceSummary({
   nights,
   extras,
   roomTotal,
-  extrasTotal,
   taxes,
   total,
 }: {

@@ -51,6 +51,7 @@ export function ReserveClient() {
       checkIn: toISODate(range.from),
       checkOut: toISODate(range.to),
     });
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     api<{ hotel: Hotel }>(`/api/hotels/${slug}?${query.toString()}`)
       .then((data) => {

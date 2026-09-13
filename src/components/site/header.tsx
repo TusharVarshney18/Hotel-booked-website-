@@ -37,10 +37,6 @@ export function SiteHeader() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
-
   return (
     <header
       className={cn(
@@ -121,22 +117,36 @@ export function SiteHeader() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => setOpen(false)}
                   className="font-display text-4xl font-bold tracking-tight"
                 >
                   {item.label}
                 </Link>
               ))}
-              <Link href="/reservations" className="text-white/60">
+              <Link
+                href="/reservations"
+                onClick={() => setOpen(false)}
+                className="text-white/60"
+              >
                 Folio
               </Link>
-              <Link href="/concierge" className="text-white/60">
+              <Link
+                href="/concierge"
+                onClick={() => setOpen(false)}
+                className="text-white/60"
+              >
                 Concierge
               </Link>
-              <Link href="/about" className="text-white/60">
+              <Link
+                href="/about"
+                onClick={() => setOpen(false)}
+                className="text-white/60"
+              >
                 Studio notes
               </Link>
               <Link
                 href="/collection"
+                onClick={() => setOpen(false)}
                 className="mt-4 inline-flex h-12 items-center justify-center rounded-full bg-gold text-[12px] font-semibold text-espresso"
               >
                 Reserve a stay

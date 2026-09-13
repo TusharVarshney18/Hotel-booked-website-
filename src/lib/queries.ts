@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { reservationCode } from "@/lib/format";
 import { computeQuote, toHotel, toReservation } from "@/lib/mappers";
@@ -8,7 +9,6 @@ import type {
   Hotel,
   PaymentMethod,
   Quote,
-  Reservation,
 } from "@/lib/types";
 
 const hotelInclude = {
@@ -16,6 +16,33 @@ const hotelInclude = {
   extras: { orderBy: { price: "asc" as const } },
   reviews: true,
 };
+
+function isRetryableTransactionError(error: unknown) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return error.code === "P2034";
+  }
+  return (
+    error instanceof Error &&
+    /database is locked|write conflict|deadlock/i.test(error.message)
+  );
+}
+
+async function runSerializable<T>(
+  fn: (tx: Prisma.TransactionClient) => Promise<T>
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await prisma.$transaction(fn, { isolationLevel: "Serializable" });
+    } catch (error) {
+      lastError = error;
+      if (!isRetryableTransactionError(error)) throw error;
+    }
+  }
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("The house could not hold the chamber.");
+}
 
 export async function overlappingCount(
   roomId: string,
@@ -220,7 +247,7 @@ export async function createReservation(input: {
     input.extraIds.includes(extra.id)
   );
 
-  const created = await prisma.$transaction(async (tx) => {
+  const created = await runSerializable(async (tx) => {
     const taken = await tx.reservation.count({
       where: {
         roomId: roomRow.id,
@@ -258,7 +285,7 @@ export async function createReservation(input: {
         paymentLast4: input.payment.last4,
         paymentUpi: input.payment.upiId,
         paymentBrand: input.payment.brand,
-        paymentStatus: "paid",
+        paymentStatus: "pending",
         nights: quote.nights,
         roomTotal: quote.roomTotal,
         extrasTotal: quote.extrasTotal,

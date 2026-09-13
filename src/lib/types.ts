@@ -101,7 +101,7 @@ export type PaymentInfo = {
   last4?: string;
   upiId?: string;
   brand?: string;
-  status: "paid" | "refunded" | "partially_refunded";
+  status: "pending" | "paid" | "refunded" | "partially_refunded";
 };
 
 export type ReservationStatus = "confirmed" | "cancelled" | "completed";
