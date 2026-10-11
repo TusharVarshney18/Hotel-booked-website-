@@ -3,6 +3,7 @@ import { Jost, Playfair_Display } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { SiteHeader } from "@/components/site/header";
 import { SiteFooter } from "@/components/site/footer";
+import { COPYRIGHT_CLAIM, SITE_AUTHOR } from "@/lib/site";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -25,7 +26,12 @@ export const metadata: Metadata = {
     template: "%s · Aurelia",
   },
   description:
-    "A private collection of palaces, villas and residences. Reserve an irreplaceable stay — booking, concierge and considered cancellation.",
+    "Shop private palaces, villas and residences. Priced in rupees, paid at checkout, held in your folio.",
+  authors: [{ name: SITE_AUTHOR }],
+  creator: SITE_AUTHOR,
+  other: {
+    copyright: COPYRIGHT_CLAIM,
+  },
   icons: {
     icon: "/favicon.svg",
   },

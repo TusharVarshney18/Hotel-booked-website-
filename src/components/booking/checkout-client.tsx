@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CreditCard, Landmark, Smartphone, Wallet } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,20 +17,60 @@ import { useBookings } from "@/components/booking/booking-provider";
 import { Container, Eyebrow } from "@/components/site/container";
 import { api } from "@/lib/api";
 import { formatDate, formatINR } from "@/lib/format";
-import type { GuestDetails, PaymentMethod, Quote, Reservation } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import type { GuestDetails, Quote, Reservation } from "@/lib/types";
 
-const methods: Array<{
-  id: PaymentMethod;
-  label: string;
-  hint: string;
-  icon: typeof CreditCard;
-}> = [
-  { id: "card", label: "Card", hint: "Visa, Mastercard, Amex", icon: CreditCard },
-  { id: "upi", label: "UPI", hint: "GPay, PhonePe, BHIM", icon: Smartphone },
-  { id: "netbanking", label: "Net banking", hint: "Indian banks", icon: Landmark },
-  { id: "wallet", label: "Wallet", hint: "Aurelia account credit", icon: Wallet },
-];
+const RAZORPAY_SCRIPT = "https://checkout.razorpay.com/v1/checkout.js";
+
+type RazorpayCheckoutOptions = {
+  key: string;
+  order_id: string;
+  name: string;
+  description?: string;
+  prefill?: { name?: string; email?: string; contact?: string };
+  theme?: { color?: string };
+  handler?: (response: {
+    razorpay_payment_id: string;
+    razorpay_order_id: string;
+    razorpay_signature: string;
+  }) => void;
+  modal?: { ondismiss?: () => void };
+};
+
+declare global {
+  interface Window {
+    Razorpay?: new (options: RazorpayCheckoutOptions) => { open: () => void };
+  }
+}
+
+function loadRazorpay() {
+  return new Promise<void>((resolve, reject) => {
+    if (typeof window === "undefined") {
+      reject(new Error("Razorpay is unavailable."));
+      return;
+    }
+    if (window.Razorpay) {
+      resolve();
+      return;
+    }
+    const existing = document.querySelector<HTMLScriptElement>(
+      `script[src="${RAZORPAY_SCRIPT}"]`
+    );
+    if (existing) {
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () =>
+        reject(new Error("Razorpay could not be loaded."))
+      );
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = RAZORPAY_SCRIPT;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () =>
+      reject(new Error("Razorpay could not be loaded."));
+    document.body.appendChild(script);
+  });
+}
 
 const emptyGuest: GuestDetails = {
   title: "Ms",
@@ -42,25 +82,11 @@ const emptyGuest: GuestDetails = {
   specialRequests: "",
 };
 
-function formatCardNumber(value: string) {
-  return value
-    .replace(/\D/g, "")
-    .slice(0, 16)
-    .replace(/(\d{4})(?=\d)/g, "$1 ");
-}
-
 export function CheckoutClient() {
   const router = useRouter();
   const { draft, setDraft, ready, refreshReservations } = useBookings();
   const [quote, setQuote] = useState<Quote | null>(null);
   const [guest, setGuest] = useState<GuestDetails>(emptyGuest);
-  const [method, setMethod] = useState<PaymentMethod>("card");
-  const [cardName, setCardName] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvv, setCvv] = useState("");
-  const [upi, setUpi] = useState("");
-  const [bank, setBank] = useState("HDFC Bank");
   const [agreed, setAgreed] = useState(false);
   const [processing, setProcessing] = useState(false);
 
@@ -103,6 +129,12 @@ export function CheckoutClient() {
     setGuest((current) => ({ ...current, [key]: value }));
   }
 
+  function finish(reservation: Reservation) {
+    setDraft(null);
+    void refreshReservations();
+    router.push(`/confirmation/${reservation.id}`);
+  }
+
   async function pay() {
     if (!draft || !quote) return;
     if (!guest.firstName || !guest.lastName || !guest.email || !guest.phone) {
@@ -113,22 +145,14 @@ export function CheckoutClient() {
       toast.error("The house asks that you accept the terms.");
       return;
     }
-    if (method === "card") {
-      const digits = cardNumber.replace(/\s/g, "");
-      if (digits.length < 16 || !expiry || cvv.length < 3) {
-        toast.error("The card is incomplete.");
-        return;
-      }
-    }
-    if (method === "upi" && !upi.includes("@")) {
-      toast.error("Enter a UPI identity such as name@okhdfc.");
-      return;
-    }
 
     setProcessing(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1400));
-      const data = await api<{ reservation: Reservation }>("/api/reservations", {
+      const order = await api<{
+        orderId: string;
+        simulated: boolean;
+        keyId: string;
+      }>("/api/payments/order", {
         method: "POST",
         body: JSON.stringify({
           hotelSlug: draft.hotelSlug,
@@ -138,20 +162,60 @@ export function CheckoutClient() {
           extraIds: draft.extraIds,
           guests: draft.guests,
           guest,
-          payment: {
-            method,
-            last4:
-              method === "card"
-                ? cardNumber.replace(/\s/g, "").slice(-4)
-                : undefined,
-            upiId: method === "upi" ? upi : undefined,
-            brand: method === "card" ? "Visa" : undefined,
-          },
         }),
       });
-      setDraft(null);
-      await refreshReservations();
-      router.push(`/confirmation/${data.reservation.id}`);
+
+      if (order.simulated) {
+        const data = await api<{ reservation: Reservation }>(
+          "/api/payments/verify",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              razorpay_order_id: order.orderId,
+              razorpay_payment_id: `sim_${Date.now()}`,
+              razorpay_signature: "simulated",
+            }),
+          }
+        );
+        finish(data.reservation);
+        return;
+      }
+
+      await loadRazorpay();
+      if (!window.Razorpay) {
+        throw new Error("Razorpay could not be loaded.");
+      }
+
+      const checkout = new window.Razorpay({
+        key: order.keyId,
+        order_id: order.orderId,
+        name: "Aurelia",
+        description: `${quote.hotel.name} · ${quote.nights} nights`,
+        prefill: {
+          name: `${guest.firstName} ${guest.lastName}`,
+          email: guest.email,
+          contact: guest.phone,
+        },
+        theme: { color: "#e8c547" },
+        handler: async (response) => {
+          try {
+            const data = await api<{ reservation: Reservation }>(
+              "/api/payments/verify",
+              { method: "POST", body: JSON.stringify(response) }
+            );
+            finish(data.reservation);
+          } catch (error) {
+            setProcessing(false);
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : "The payment could not be verified."
+            );
+          }
+        },
+        modal: { ondismiss: () => setProcessing(false) },
+      });
+      checkout.open();
     } catch (error) {
       setProcessing(false);
       toast.error(
@@ -188,8 +252,9 @@ export function CheckoutClient() {
             <Eyebrow>Guest folio</Eyebrow>
             <h1 className="mt-3 font-display text-5xl">Payment</h1>
             <p className="mt-3 max-w-xl text-sm text-muted-foreground">
-              The charge is taken now. Cancellation remains available according
-              to the house policy, with the refund shown before you confirm.
+              The charge is taken now, securely through Razorpay. Cancellation
+              remains available according to the house policy, with the refund
+              shown before you confirm.
             </p>
 
             <div className="mt-10 grid gap-4 sm:grid-cols-2">
@@ -259,122 +324,18 @@ export function CheckoutClient() {
 
             <div className="mt-12">
               <h2 className="font-display text-3xl">How you will settle</h2>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {methods.map((item) => {
-                  const Icon = item.icon;
-                  const active = method === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setMethod(item.id)}
-                      className={cn(
-                        "flex items-start gap-3 border p-4 text-left",
-                        active ? "border-espresso bg-card" : "border-border"
-                      )}
-                    >
-                      <Icon className="mt-0.5 size-4 text-gold" />
-                      <span>
-                        <span className="block text-sm">{item.label}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {item.hint}
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="mt-5 flex items-start gap-3 border border-border bg-card p-5">
+                <ShieldCheck className="mt-0.5 size-5 text-gold" />
+                <div>
+                  <p className="text-sm">
+                    Card, UPI, net banking and wallets are handled by Razorpay.
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    You will complete the payment in a secure Razorpay window.
+                    Aurelia never sees your card details.
+                  </p>
+                </div>
               </div>
-
-              {method === "card" ? (
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                    <Label htmlFor="cardName">Name on the card</Label>
-                    <Input
-                      id="cardName"
-                      className="mt-2 h-12 rounded-none"
-                      value={cardName}
-                      onChange={(event) => setCardName(event.target.value)}
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <Label htmlFor="cardNumber">Number</Label>
-                    <Input
-                      id="cardNumber"
-                      inputMode="numeric"
-                      placeholder="ACCT-000015"
-                      className="mt-2 h-12 rounded-none tracking-[0.18em]"
-                      value={cardNumber}
-                      onChange={(event) =>
-                        setCardNumber(formatCardNumber(event.target.value))
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="expiry">Expiry</Label>
-                    <Input
-                      id="expiry"
-                      placeholder="MM / YY"
-                      className="mt-2 h-12 rounded-none"
-                      value={expiry}
-                      onChange={(event) => setExpiry(event.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="cvv">CVV</Label>
-                    <Input
-                      id="cvv"
-                      inputMode="numeric"
-                      className="mt-2 h-12 rounded-none"
-                      value={cvv}
-                      onChange={(event) =>
-                        setCvv(event.target.value.replace(/\D/g, "").slice(0, 4))
-                      }
-                    />
-                  </div>
-                </div>
-              ) : null}
-
-              {method === "upi" ? (
-                <div className="mt-6">
-                  <Label htmlFor="upi">UPI identity</Label>
-                  <Input
-                    id="upi"
-                    placeholder="name@okhdfcbank"
-                    className="mt-2 h-12 rounded-none"
-                    value={upi}
-                    onChange={(event) => setUpi(event.target.value)}
-                  />
-                </div>
-              ) : null}
-
-              {method === "netbanking" ? (
-                <div className="mt-6">
-                  <Label htmlFor="bank">Bank</Label>
-                  <select
-                    id="bank"
-                    className="mt-2 h-12 w-full border border-input bg-card px-3 text-sm"
-                    value={bank}
-                    onChange={(event) => setBank(event.target.value)}
-                  >
-                    {[
-                      "HDFC Bank",
-                      "ICICI Bank",
-                      "Axis Bank",
-                      "State Bank of India",
-                      "Kotak Mahindra",
-                    ].map((item) => (
-                      <option key={item}>{item}</option>
-                    ))}
-                  </select>
-                </div>
-              ) : null}
-
-              {method === "wallet" ? (
-                <p className="mt-6 border border-border bg-card p-4 text-sm text-muted-foreground">
-                  Circle members may settle against account credit. For this
-                  preview, the wallet will authorise the full amount.
-                </p>
-              ) : null}
             </div>
 
             <label className="mt-8 flex items-start gap-3 text-sm">
@@ -384,8 +345,23 @@ export function CheckoutClient() {
                 className="mt-0.5"
               />
               <span>
-                I accept the house cancellation policy, the 18% tax levy, and
-                that this preview authorises a simulated payment only.
+                I accept the{" "}
+                <Link
+                  href="/legal/terms"
+                  className="text-gold underline underline-offset-4"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  terms of sale
+                </Link>
+                , the{" "}
+                <Link
+                  href="/legal/refunds"
+                  className="text-gold underline underline-offset-4"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  refund policy
+                </Link>
+                , and the 18% tax levy.
               </span>
             </label>
 

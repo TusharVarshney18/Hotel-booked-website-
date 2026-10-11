@@ -94,6 +94,20 @@ function checkStayDates(
 
 export const quoteSchema = z.object(stayFields).superRefine(checkStayDates);
 
+export const paymentOrderSchema = z
+  .object({
+    ...stayFields,
+    guests: guestCountSchema,
+    guest: guestDetailsSchema,
+  })
+  .superRefine(checkStayDates);
+
+export const paymentVerifySchema = z.object({
+  razorpay_order_id: z.string().trim().min(1),
+  razorpay_payment_id: z.string().trim().min(1),
+  razorpay_signature: z.string().trim().min(1),
+});
+
 export const createReservationSchema = z
   .object({
     ...stayFields,

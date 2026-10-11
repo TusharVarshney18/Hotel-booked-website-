@@ -43,7 +43,7 @@ export default async function HomePage() {
               <span className="rounded-full bg-gold/20 px-2 py-0.5 text-gold">
                 New
               </span>
-              Live ledger · availability in real time
+              In stock tonight · priced in rupees
             </p>
             <h1 className="rise rise-delay-1 mt-6 font-display text-[3.1rem] leading-[0.95] font-extrabold tracking-tight sm:text-6xl lg:text-[5.2rem]">
               Arrive like
@@ -51,16 +51,15 @@ export default async function HomePage() {
               is watching.
             </h1>
             <p className="rise rise-delay-2 mt-6 max-w-lg text-base leading-relaxed text-white/60 sm:text-lg">
-              Palaces, villas and residences — interfaces, APIs and a house
-              book that actually holds the chamber. Premium stays, shipped
-              end to end.
+              A shop for palaces, villas and residences. Choose a chamber, see
+              the full price, and pay at checkout. The folio is your order.
             </p>
             <div className="rise rise-delay-3 mt-8 flex flex-wrap gap-3">
               <Link
                 href="/collection"
                 className="inline-flex h-12 items-center rounded-full bg-gold px-6 text-[13px] font-semibold text-espresso"
               >
-                Explore work
+                Shop the collection
               </Link>
               <Link
                 href="/concierge"
@@ -130,7 +129,8 @@ export default async function HomePage() {
           <p className="max-w-xl text-base leading-relaxed text-white/55">
             Aurelia is not a chain. It is a collection we would stay in
             ourselves — restored palaces, cliff villas, a ryokan of nine rooms.
-            Booking, payment and cancellation run on a live ledger.
+            You buy a stay the same way you buy anything else: a price, a
+            checkout, and an order you can cancel.
           </p>
         </Container>
         <Container className="mt-14 grid gap-4 md:grid-cols-3">
@@ -166,7 +166,7 @@ export default async function HomePage() {
             href="/collection"
             className="hidden text-[13px] font-medium text-gold sm:inline"
           >
-            View all houses →
+            View the shop →
           </Link>
         </Container>
         <Container className="grid gap-6">
@@ -181,7 +181,29 @@ export default async function HomePage() {
         </Container>
       </section>
 
-      <section className="border-y border-white/10 bg-black/30 py-20 lg:py-28">
+      <section className="border-y border-white/10 bg-black/30 py-16">
+        <Container>
+          <Eyebrow>How a stay is bought</Eyebrow>
+          <ol className="mt-8 grid gap-4 md:grid-cols-4">
+            {[
+              ["01", "Shop", "Pick a residence and a chamber that is free for your dates."],
+              ["02", "Quote", "Room, extras and 18% tax are added before you continue."],
+              ["03", "Pay", "Razorpay takes the card, UPI or net-banking payment."],
+              ["04", "Order", "The folio is your receipt. Cancel from there if plans change."],
+            ].map(([step, title, body]) => (
+              <li key={step} className="rounded-3xl border border-white/10 bg-card p-6">
+                <p className="text-[11px] tracking-[0.22em] text-gold uppercase">
+                  {step}
+                </p>
+                <h3 className="mt-3 font-display text-2xl font-bold">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-white/50">{body}</p>
+              </li>
+            ))}
+          </ol>
+        </Container>
+      </section>
+
+      <section className="border-b border-white/10 bg-black/30 py-20 lg:py-28">
         <Container>
           <Eyebrow>03 — Map</Eyebrow>
           <h2 className="mt-3 font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
@@ -277,7 +299,7 @@ export default async function HomePage() {
               href={`/collection/${quietest.slug}`}
               className="mt-8 inline-flex h-12 items-center rounded-full bg-gold px-8 text-[13px] font-semibold text-espresso"
             >
-              Open live project
+              Buy this stay
             </Link>
           </Container>
         </section>

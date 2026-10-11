@@ -11,7 +11,7 @@ type Search = {
 };
 
 export const metadata = {
-  title: "The collection",
+  title: "Shop",
 };
 
 export const dynamic = "force-dynamic";
@@ -37,14 +37,14 @@ export default async function CollectionPage({
   return (
     <div className="pt-24 pb-20">
       <Container className="mb-12 max-w-3xl">
-        <Eyebrow>The live ledger</Eyebrow>
+        <Eyebrow>The catalogue</Eyebrow>
         <h1 className="mt-4 font-display text-5xl leading-[0.95] font-extrabold tracking-tight sm:text-6xl">
           Selected
           <span className="block text-white/40">houses.</span>
         </h1>
         <p className="mt-4 text-muted-foreground">
-          Palaces, villas, a ryokan, a chalet. Availability is read from the
-          house book — chambers already held for those dates will not appear.
+          Palaces, villas, a ryokan, a chalet. Prices are per night, in rupees.
+          Chambers already sold for your dates do not appear.
         </p>
       </Container>
       <CollectionExplorer

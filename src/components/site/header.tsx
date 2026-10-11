@@ -16,9 +16,9 @@ import { cn } from "@/lib/utils";
 import { useBookings } from "@/components/booking/booking-provider";
 
 const nav = [
-  { href: "/collection", label: "Work" },
-  { href: "/destinations", label: "Map" },
-  { href: "/experiences", label: "Rituals" },
+  { href: "/collection", label: "Shop" },
+  { href: "/destinations", label: "Destinations" },
+  { href: "/experiences", label: "Experiences" },
   { href: "/circle", label: "Circle" },
 ];
 
@@ -80,7 +80,7 @@ export function SiteHeader() {
             href={session ? "/reservations" : "/login"}
             className="text-[12px] text-white/65 hover:text-white"
           >
-            {session ? `Folio${upcoming ? ` · ${upcoming}` : ""}` : "Sign in"}
+            {session ? `Orders${upcoming ? ` · ${upcoming}` : ""}` : "Sign in"}
           </Link>
           <Link
             href="/collection"
@@ -128,7 +128,7 @@ export function SiteHeader() {
                 onClick={() => setOpen(false)}
                 className="text-white/60"
               >
-                {session ? "Folio" : "Sign in"}
+                {session ? "Orders" : "Sign in"}
               </Link>
               <Link
                 href="/concierge"
@@ -138,11 +138,11 @@ export function SiteHeader() {
                 Concierge
               </Link>
               <Link
-                href="/about"
+                href="/legal"
                 onClick={() => setOpen(false)}
                 className="text-white/60"
               >
-                Studio notes
+                Policies
               </Link>
               <Link
                 href="/collection"

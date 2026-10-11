@@ -1,23 +1,34 @@
 import Link from "next/link";
 import { Container } from "@/components/site/container";
+import { COPYRIGHT_CLAIM, copyrightLine } from "@/lib/site";
 
 const columns = [
   {
-    title: "Product",
+    title: "Shop",
     links: [
       { href: "/collection", label: "All residences" },
-      { href: "/destinations", label: "Map" },
-      { href: "/experiences", label: "Rituals" },
+      { href: "/destinations", label: "Destinations" },
+      { href: "/experiences", label: "Experiences" },
       { href: "/circle", label: "Circle" },
     ],
   },
   {
-    title: "Stay",
+    title: "Orders",
     links: [
       { href: "/reservations", label: "Your folio" },
+      { href: "/checkout", label: "Checkout" },
       { href: "/concierge", label: "Concierge" },
       { href: "/about", label: "The house" },
-      { href: "/collection", label: "Reserve" },
+    ],
+  },
+  {
+    title: "Policies",
+    links: [
+      { href: "/legal", label: "How to buy" },
+      { href: "/legal/terms", label: "Terms of sale" },
+      { href: "/legal/refunds", label: "Refunds" },
+      { href: "/legal/privacy", label: "Privacy" },
+      { href: "/legal/contact", label: "Contact" },
     ],
   },
 ];
@@ -25,15 +36,15 @@ const columns = [
 export function SiteFooter() {
   return (
     <footer className="border-t border-white/10 bg-[#05060a] text-ivory">
-      <Container className="grid gap-12 py-16 md:grid-cols-[1.5fr_1fr_1fr] md:py-20">
+      <Container className="grid gap-12 py-16 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] lg:py-20">
         <div>
           <p className="font-display text-4xl font-extrabold tracking-tight">
             AURELIA.
             <span className="block text-white/40">House</span>
           </p>
           <p className="mt-5 max-w-sm text-sm leading-relaxed text-white/50">
-            Private palaces, villas and residences — designed, booked and
-            cancelled like a shipped product. Ledger live. Payment quiet.
+            A shop for private palaces, villas and residences. Choose a
+            chamber, pay in rupees, and keep the folio.
           </p>
           <Link
             href="/concierge"
@@ -63,9 +74,9 @@ export function SiteFooter() {
         ))}
       </Container>
       <div className="border-t border-white/10">
-        <Container className="flex flex-col gap-3 py-6 text-[11px] tracking-[0.18em] text-white/35 uppercase sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} Aurelia House · Delhi craft, global stays</p>
-          <p>Prisma ledger · simulated rails</p>
+        <Container className="flex flex-col gap-2 py-6 text-sm text-white/55 sm:flex-row sm:items-center sm:justify-between">
+          <p>{copyrightLine()}</p>
+          <p>{COPYRIGHT_CLAIM}</p>
         </Container>
       </div>
     </footer>

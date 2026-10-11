@@ -211,6 +211,7 @@ export async function createReservation(input: {
     upiId?: string;
     brand?: string;
   };
+  paymentStatus?: "pending" | "paid";
 }) {
   const hotelRow = await prisma.hotel.findUnique({
     where: { slug: input.hotelSlug },
@@ -285,7 +286,7 @@ export async function createReservation(input: {
         paymentLast4: input.payment.last4,
         paymentUpi: input.payment.upiId,
         paymentBrand: input.payment.brand,
-        paymentStatus: "pending",
+        paymentStatus: input.paymentStatus ?? "pending",
         nights: quote.nights,
         roomTotal: quote.roomTotal,
         extrasTotal: quote.extrasTotal,

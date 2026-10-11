@@ -45,7 +45,7 @@ export default function AboutPage() {
           },
           {
             title: "A quiet payment",
-            body: "Card, UPI, net banking or wallet. The house never stores a number in this preview — the rail is simulated.",
+            body: "Card, UPI, net banking or wallet, taken by Razorpay at checkout. The house stores the folio, never the card number.",
           },
         ].map((item) => (
           <article key={item.title}>
